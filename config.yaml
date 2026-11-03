@@ -1,0 +1,73 @@
+ =
+# packing.py configuration
+#
+# All paths below may be absolute, or relative -- relative paths are resolved
+# against the location of THIS file (not the current working directory), so
+# `python packing.py download` works the same no matter where you run it from.
+ =
+
+data:
+  # CSV of tickers to download. Expected columns: Ticker,Name,Exchange,Category Name,Country
+  symbols_csv: "Yahoo-Finance-Ticker-Symbols.csv"
+
+  # One Parquet file per symbol is written here, e.g. database/raw/AAPL.parquet
+  raw_dir: "database/raw"
+
+  # symbols_metadata.parquet (per-symbol status/audit) and validation_report.parquet live here
+  metadata_dir: "database/metadata"
+
+  # Rotating log file(s)
+  log_dir: "logs"
+
+download:
+  # How much history to pull on a fresh (non-`update`) download. ~20 years by default.
+  lookback_days: 7300
+
+  # Yahoo chart interval. The pipeline is written for daily bars; other
+  # intervals are passed through but not specifically validated for.
+  interval: "1d"
+
+  request_timeout_seconds: 30
+
+  # Per-request retry attempts for TRANSIENT failures only (timeouts, 5xx,
+  # 429, connection errors). Confirmed "no data" responses are never retried.
+  max_retries: 5
+  retry_backoff_base_seconds: 1.5
+  retry_backoff_max_seconds: 60
+
+  # After the main pass, symbols that exhausted max_retries get one more
+  # chance in a dedicated, lower-concurrency "retry queue" pass (repeated
+  # up to retry_queue_passes times) after a cooldown. This recovers most
+  # symbols that failed only because the whole batch was briefly rate-limited.
+  retry_queue_passes: 2
+  retry_queue_cooldown_seconds: 30
+
+  # Thread pool size for the main pass (I/O-bound, so this can exceed core count).
+  max_workers: 16
+
+  # Global cap on requests/second across ALL worker threads combined, to avoid
+  # getting throttled or IP-banned by Yahoo. Tune down if you see many 429s.
+  rate_limit_per_sec: 8
+
+  user_agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+
+  # How many symbol results to buffer before flushing symbols_metadata.parquet
+  # to disk. Lower = safer against crashes, higher = less I/O overhead.
+  metadata_flush_every: 250
+
+storage:
+  compression: "zstd"
+  compression_level: 9
+
+logging:
+  level: "INFO"          # DEBUG / INFO / WARNING / ERROR
+  console: true
+  file: true
+  max_bytes: 10485760     # 10 MB per log file before rotating
+  backup_count: 5
+
+validation:
+  # Used by `verify`: a gap between consecutive trading days larger than this
+  # (calendar days) is flagged as a WARNING (not an error -- long gaps are
+  # normal around some holidays/illiquid names).
+  max_allowed_gap_days: 10
