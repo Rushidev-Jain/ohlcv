@@ -18,6 +18,8 @@
 
 `packing.py` is a single-script Python pipeline for downloading daily OHLCV history for a very large Yahoo Finance ticker universe and storing it in a clean, analysis-ready layout in Parquet files.
 
+```Published on 23rd Aug  : 2 contributions [reuploaded repository]```
+
 ### Warning : YF's Data is not Clean
 
 [Gmail - Incorrect Historical Price Data (around 31st july 2026 in ticker MPA.CR).pdf](https://github.com/user-attachments/files/31350981/Gmail.-.Incorrect.Historical.Price.Data.around.31st.july.2026.in.ticker.MPA.CR.pdf)
